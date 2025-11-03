@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Element Click Inspector",
+  "version": "1.0",
+  "description": "Click any element to view/copy image URL (img src or background-image).",
+  "permissions": ["scripting", "activeTab"],
+  "action": {
+    "default_title": "Activate element inspector"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}
