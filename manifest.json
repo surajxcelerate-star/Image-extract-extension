@@ -1,13 +1,23 @@
 {
   "manifest_version": 3,
-  "name": "Element Click Inspector",
-  "version": "1.0",
-  "description": "Click any element to view/copy image URL (img src or background-image).",
-  "permissions": ["scripting", "activeTab"],
-  "action": {
-    "default_title": "Activate element inspector"
-  },
+  "name": "Image Fetcher with Preview",
+  "version": "1.1",
+  "description": "Capture image URLs (jpg/png/webp) with thumbnail previews from network requests.",
+  "permissions": [
+    "webRequest",
+    "webRequestBlocking",
+    "activeTab",
+    "storage",
+    "downloads",
+    "scripting",
+    "clipboardWrite"
+  ],
+  "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Fetch image URLs"
   }
 }
