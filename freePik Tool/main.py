@@ -22,7 +22,7 @@ ctk.set_default_color_theme("dark-blue")
 
 app = ctk.CTk()
 app.title("🖼️ Freepik AI Image Upscaler")
-app.geometry("640x520")
+app.geometry("640x580")  # slightly taller for extra button
 
 title_label = ctk.CTkLabel(app, text="🖼️ Freepik AI Image Upscaler", font=("Arial Rounded MT Bold", 22))
 title_label.pack(pady=20)
@@ -158,12 +158,55 @@ def upscale_from_url():
         messagebox.showerror("Error", f"Something went wrong:\n{e}")
         status_label.configure(text="Error occurred.", text_color="red")
 
+# ----- Download Original Image -----
+def download_original():
+    image_url = url_entry.get().strip()
+    if not image_url:
+        messagebox.showwarning("Input Required", "Please paste an image URL first.")
+        return
+
+    try:
+        status_label.configure(text="Downloading original image...", text_color="cyan")
+        app.update()
+
+        resp = requests.get(image_url, timeout=10)
+        if resp.status_code != 200:
+            messagebox.showerror("Error", f"Unable to fetch image: HTTP {resp.status_code}")
+            status_label.configure(text="Download failed.", text_color="red")
+            return
+
+        # Ensure downloads folder exists
+        desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
+        download_folder = os.path.join(desktop_path, "Freepik_Upscaled_Images")
+        os.makedirs(download_folder, exist_ok=True)
+
+        file_name = os.path.basename(image_url.split("?")[0]) or "original_image.png"
+        if not file_name.lower().endswith((".png", ".jpg", ".jpeg", ".webp")):
+            file_name += ".png"
+
+        save_path = os.path.join(download_folder, file_name)
+        with open(save_path, "wb") as f:
+            f.write(resp.content)
+
+        status_label.configure(
+            text=f"✅ Original image saved:\n{save_path}",
+            text_color="lightgreen"
+        )
+        messagebox.showinfo("Success", f"Original image saved to:\n{save_path}")
+
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to download original image:\n{e}")
+        status_label.configure(text="Error occurred.", text_color="red")
+
 # ----- Buttons -----
 preview_button = ctk.CTkButton(app, text="🔍 Preview Image", command=show_preview)
 preview_button.pack(pady=5)
 
 upscale_button = ctk.CTkButton(app, text="🚀 Upscale Image", command=upscale_from_url)
 upscale_button.pack(pady=5)
+
+download_button = ctk.CTkButton(app, text="💾 Download Original Image", command=download_original)
+download_button.pack(pady=5)
 
 quit_button = ctk.CTkButton(app, text="Exit", command=app.destroy, fg_color="gray")
 quit_button.pack(pady=15)

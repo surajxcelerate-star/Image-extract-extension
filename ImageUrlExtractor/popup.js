@@ -1,44 +1,70 @@
-const listDiv = document.getElementById("list");
+const list = document.getElementById("list");
 const refreshBtn = document.getElementById("refresh");
 const clearBtn = document.getElementById("clear");
 
-function loadImages() {
-  chrome.runtime.sendMessage({ action: "getImages" }, (response) => {
-    listDiv.innerHTML = "";
-    response.images.forEach((url) => {
-      const item = document.createElement("div");
-      item.className = "item";
+// Render images in popup
+function renderImages(images) {
+  list.innerHTML = "";
+  images.forEach((url) => {
+    const div = document.createElement("div");
+    div.className = "item";
 
-      const img = document.createElement("img");
-      img.src = url;
-      img.className = "thumb";
-      img.title = "Click to copy URL";
-      img.onclick = () => {
-        navigator.clipboard.writeText(url);
-        img.style.opacity = "0.6";
-        setTimeout(() => (img.style.opacity = "1"), 400);
-      };
+    const img = document.createElement("img");
+    img.src = url;
+    img.className = "thumb";
+    img.title = url;
+    img.addEventListener("click", () => window.open(url, "_blank"));
 
-      const text = document.createElement("div");
-      text.className = "url";
-      text.textContent = url.split("/").pop().slice(0, 25); // shortened filename
-      text.title = url;
-      text.onclick = () => {
-        navigator.clipboard.writeText(url);
-        text.style.color = "#007aff";
-        setTimeout(() => (text.style.color = ""), 500);
-      };
-
-      item.appendChild(img);
-      item.appendChild(text);
-      listDiv.appendChild(item);
+    const span = document.createElement("span");
+    span.className = "url";
+    span.textContent = url;
+    span.addEventListener("click", () => {
+      navigator.clipboard.writeText(url);
+      span.textContent = "Copied!";
+      setTimeout(() => (span.textContent = url), 1000);
     });
+
+    div.appendChild(img);
+    div.appendChild(span);
+    list.appendChild(div);
   });
 }
 
-refreshBtn.onclick = loadImages;
-clearBtn.onclick = () => {
-  chrome.runtime.sendMessage({ action: "clear" }, () => loadImages());
-};
+// Fetch images from content script
+function fetchImages() {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    chrome.scripting.executeScript(
+      {
+        target: { tabId: tabs[0].id },
+        func: () => window.imageUrls || [],
+      },
+      (results) => {
+        if (results && results[0] && results[0].result) {
+          renderImages(results[0].result);
+        }
+      }
+    );
+  });
+}
 
-loadImages();
+// Clear images
+clearBtn.addEventListener("click", () => {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    chrome.scripting.executeScript(
+      {
+        target: { tabId: tabs[0].id },
+        func: () => {
+          window.imageUrls = [];
+          return true;
+        },
+      },
+      () => fetchImages()
+    );
+  });
+});
+
+// Refresh images
+refreshBtn.addEventListener("click", fetchImages);
+
+// Initial load
+fetchImages();
